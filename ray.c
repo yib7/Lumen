@@ -14,7 +14,7 @@
 #include "plane.h"
 
 int init(SCENE_T *scene) {
-   FILE *file = fopen("scene.txt", "r");
+   FILE *file = fopen("creative.txt", "r");
     if (!file) {
         fprintf(stderr, "Error opening file.\n");
         return 0;
@@ -127,7 +127,7 @@ int main(void)
    int result = init(&scene);
 
    if (result == 0) {
-        fprintf(stderr, "Failed to initialize scene.\n");
+        fprintf(stderr, "Failed to initialize creative.\n");
         return 0;
     }
 
