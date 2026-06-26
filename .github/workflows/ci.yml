@@ -1,0 +1,18 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show compiler
+        run: gcc --version
+      - name: Build (warnings as errors)
+        run: gcc -O2 -fopenmp -std=c11 -Wall -Wextra -Werror -Isrc src/*.c -lm -o lumen
+      - name: Smoke test
+        run: bash tests/smoke.sh

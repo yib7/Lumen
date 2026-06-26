@@ -1,8 +1,13 @@
 # build output
 /lumen
 /lumen.exe
+/lumen_test
+/lumen_test.exe
 *.o
 *.obj
+
+# smoke-test scratch
+/smoke_*.png
 
 # rendered images written outside renders/ (the committed samples stay)
 /out.png

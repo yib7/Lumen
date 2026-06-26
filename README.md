@@ -1,5 +1,7 @@
 # Lumen
 
+[![CI](https://github.com/yib7/Lumen/actions/workflows/ci.yml/badge.svg)](https://github.com/yib7/Lumen/actions/workflows/ci.yml)
+
 A CPU raytracer written in C. It reads a plain-text scene file and renders it
 to a PNG or PPM image with reflections, shadows, anti-aliasing, and multiple
 material types. Rendering runs across all cores using OpenMP.
@@ -89,6 +91,16 @@ Example with heavier anti-aliasing and a larger frame:
 
 ```sh
 ./lumen -s scenes/mirrors.scene -o renders/mirrors.png -w 1280 -h 960 -a 4 -d 6
+```
+
+## Tests
+
+`tests/smoke.sh` builds the renderer and renders every bundled scene at a small
+size, checking each output is a valid PNG. It runs on every push through GitHub
+Actions (see the badge above).
+
+```sh
+bash tests/smoke.sh
 ```
 
 ## Viewing the output
