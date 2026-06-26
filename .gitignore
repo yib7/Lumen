@@ -1,2 +1,14 @@
+# build output
+/lumen
+/lumen.exe
+*.o
+*.obj
+
+# rendered images written outside renders/ (the committed samples stay)
+/out.png
+/out.ppm
+/*.ppm
+
+# editor / OS cruft
 .vscode/
 .DS_Store

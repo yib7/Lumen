@@ -1,0 +1,26 @@
+# solar.scene - a row of colored spheres over a checkered floor.
+# This is the descendant of the original class scene: nine spheres of
+# varying size and color, lit from the upper left, sitting on a reflective
+# checkerboard plane under a blue sky gradient.
+
+camera  0 0 0  0.5
+
+sky  0.25 0.45 0.85   0.75 0.85 1.0
+
+# Key light (warm, strong) and a dim cool fill from the right.
+light  -10  6 -3   1.0 0.95 0.85   1.4
+light    6  4  0   0.5 0.6  1.0    0.4
+
+# normal dist  color1            color2          reflect refl shine
+plane  0 1 0  0.9   0.05 0.05 0.07   0.85 0.85 0.9   reflect 0.25 80
+
+# sphere  cx    cy   cz  radius   r    g    b     [reflect refl shine]
+sphere  -2.40 1.00 4.0  0.10   0.90 0.95 0.90
+sphere  -2.00 1.00 4.0  0.15   0.80 0.40 0.00
+sphere  -1.60 1.00 4.0  0.175  0.00 0.00 1.00   reflect 0.4 120
+sphere  -1.55 1.30 4.0  0.05   0.80 0.80 0.80
+sphere  -1.23 1.00 4.0  0.125  0.90 0.20 0.00
+sphere  -0.50 1.00 4.0  0.52   0.60 0.30 0.00
+sphere   0.55 1.00 4.0  0.45   1.00 0.80 0.00   reflect 0.3 90
+sphere   1.42 1.00 4.0  0.32   0.00 1.00 1.00
+sphere   2.15 1.00 4.0  0.28   0.50 0.00 0.75
