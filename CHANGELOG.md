@@ -1,0 +1,30 @@
+# Changelog
+
+All notable changes to Lumen are recorded here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project uses
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2026-06-27
+
+First public release.
+
+### Added
+- Whitted-style recursive raytracer in C11 with a configurable reflection
+  bounce limit.
+- Three primitives: spheres, infinite planes (with optional checkerboard), and
+  axis-aligned boxes.
+- Two materials: matte (ambient + diffuse + Phong specular) and reflective.
+- Hard shadows from multiple colored point lights with distance attenuation.
+- Anti-aliasing by NxN supersampling and a vertical sky gradient background.
+- Plain-text scene file format with line-numbered parse errors.
+- PNG output (via vendored `stb_image_write`) and PPM output, chosen by file
+  extension.
+- OpenMP row-parallel rendering with selectable thread count; serial fallback
+  when built without OpenMP.
+- Command-line interface for scene, output, resolution, samples, depth, and
+  threads.
+- `make`, `build.sh`, and a documented raw `gcc` invocation as build paths.
+- Smoke test (`tests/smoke.sh`) and a GitHub Actions CI workflow that builds
+  with `-Werror` and renders every bundled scene.
+
+[1.0.0]: https://github.com/yib7/Lumen/releases/tag/v1.0.0
