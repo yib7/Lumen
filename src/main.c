@@ -14,6 +14,17 @@
 
 #define LUMEN_VERSION "1.0.0"
 
+/* Wall-clock seconds. OpenMP's timer measures elapsed real time on every
+ * platform; clock() measures per-process CPU time, which sums every thread and
+ * so over-reports a multithreaded render on Linux/macOS. */
+static double now_seconds(void) {
+#ifdef _OPENMP
+    return omp_get_wtime();
+#else
+    return (double)clock() / CLOCKS_PER_SEC;
+#endif
+}
+
 static void print_usage(const char *prog) {
     printf(
         "Lumen %s - a CPU raytracer in C\n\n"
@@ -114,9 +125,9 @@ int main(int argc, char *argv[]) {
     printf("threads: 1 (single-threaded build)\n");
 #endif
 
-    clock_t start = clock();
+    double start = now_seconds();
     unsigned char *pixels = render_scene(&scene, &cfg);
-    double elapsed = (double)(clock() - start) / CLOCKS_PER_SEC;
+    double elapsed = now_seconds() - start;
 
     if (!pixels) {
         fprintf(stderr, "error: failed to allocate the image buffer\n");

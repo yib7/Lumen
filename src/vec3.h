@@ -19,7 +19,6 @@ Vec3   vec3_sub(Vec3 a, Vec3 b);
 Vec3   vec3_scale(Vec3 a, double s);
 Vec3   vec3_mul(Vec3 a, Vec3 b);        /* component-wise, used for color */
 double vec3_dot(Vec3 a, Vec3 b);
-Vec3   vec3_cross(Vec3 a, Vec3 b);
 double vec3_len(Vec3 a);
 Vec3   vec3_normalize(Vec3 a);
 Vec3   vec3_reflect(Vec3 incident, Vec3 normal);
