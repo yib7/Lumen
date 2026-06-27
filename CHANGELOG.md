@@ -4,9 +4,12 @@ All notable changes to Lumen are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-06-27
+## [2.0.0] - 2026-06-27
 
-First public release.
+The rewrite of the original Raytraced Sphere prototype into Lumen: a full
+Whitted-style renderer with a scene-file format, multiple primitives and
+materials, PNG output, and OpenMP parallelism. First public release under the
+Lumen name.
 
 ### Added
 - Whitted-style recursive raytracer in C11 with a configurable reflection
@@ -27,4 +30,9 @@ First public release.
 - Smoke test (`tests/smoke.sh`) and a GitHub Actions CI workflow that builds
   with `-Werror` and renders every bundled scene.
 
-[1.0.0]: https://github.com/yib7/Lumen/releases/tag/v1.0.0
+## Earlier releases
+
+V1.0 and V1.1 (early 2025) were the original Raytraced Sphere versions, a
+simpler raytracer that the 2.0 rewrite supersedes.
+
+[2.0.0]: https://github.com/yib7/Lumen/releases/tag/V2.0
