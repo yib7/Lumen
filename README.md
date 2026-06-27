@@ -6,7 +6,11 @@ A CPU raytracer written in C. It reads a plain-text scene file and renders it
 to a PNG or PPM image with reflections, shadows, anti-aliasing, and multiple
 material types. Rendering runs across all cores using OpenMP.
 
-![A row of colored spheres over a reflective checkered floor](renders/solar.png)
+![Lumen rendering the solar scene while a point light orbits it, shadows and highlights sweeping across the spheres](renders/demo.gif)
+
+Every frame above is a real Lumen render. As the key light orbits the scene the
+shadows swing across the floor, the specular highlights track it, and the
+reflective spheres and checkered floor mirror their surroundings.
 
 ## What it does
 
