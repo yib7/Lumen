@@ -3,7 +3,12 @@
 #   make debug    debug build, -g -O0, no OpenMP
 #   make clean    remove the binary
 
-CC      ?= gcc
+# GNU Make pre-defines CC as "cc". Override only that built-in default so a
+# real user-supplied CC (environment or command line) still wins. WinLibs
+# MinGW ships gcc, not cc, so the bare default would fail there.
+ifeq ($(origin CC),default)
+CC := gcc
+endif
 CFLAGS  := -std=c11 -Wall -Wextra -Isrc
 RELEASE := -O2 -fopenmp
 DEBUG   := -g -O0

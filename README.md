@@ -64,7 +64,7 @@ Or use one of the helpers, which run the same command:
 
 ```sh
 ./build.sh        # release build
-make              # same, via Make
+make              # same, via Make (on WinLibs MinGW the command is mingw32-make)
 ```
 
 If your compiler has no OpenMP, drop `-fopenmp`; the renderer falls back to a
@@ -102,7 +102,7 @@ Example with heavier anti-aliasing and a larger frame:
 Rendering is the bottleneck, and it parallelizes cleanly because image rows are
 independent. On a 12-thread CPU, rendering `scenes/mirrors.scene` at 1200x900
 with 3x3 anti-aliasing and depth 8 drops from about 3.7s single-threaded to
-about 0.53s across all cores: roughly a 6.9x speedup. It is sub-linear, not
+about 0.50s across all cores: roughly a 7.4x speedup. It is sub-linear, not
 12x, because the reflective scene makes some rays recurse far deeper than others
 (dynamic scheduling balances that) and the cores share memory bandwidth. Run
 your own with `-t 1` versus `-t 0`.
