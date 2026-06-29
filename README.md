@@ -36,7 +36,7 @@ The three scenes in `scenes/` produced the images in `renders/`.
 
 | `solar.scene` | `mirrors.scene` | `sunset.scene` |
 |---|---|---|
-| ![solar](renders/solar.png) | ![mirrors](renders/mirrors.png) | ![sunset](renders/sunset.png) |
+| ![A row of colored spheres of varying size on a reflective checkered floor under a blue sky gradient](renders/solar.png) | ![A near-chrome sphere flanked by colored spheres and reflective boxes on a dark glossy floor, each surface mirroring its neighbors](renders/mirrors.png) | ![Spheres and two boxes casting long shadows on a matte floor, lit warm by a low sun against an orange-to-purple sky](renders/sunset.png) |
 
 ## Tech stack
 

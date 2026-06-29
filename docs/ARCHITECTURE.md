@@ -6,15 +6,15 @@ way around in a few minutes.
 
 ## The render pipeline
 
-```
-main.c        parse CLI args, load the scene, time the render, write the file
-  |
-parser.c      read the scene file into a Scene (objects, lights, camera, sky)
-  |
-render.c      for each pixel, cast rays and shade them -> RGB8 buffer
-  |  uses scene.c -> geometry.c for intersection tests
-  |
-image.c       encode the buffer as PNG (via stb) or PPM
+```mermaid
+flowchart TD
+    A["main.c: parse CLI args, load the scene, time the render, write the file"]
+    B["parser.c: read the scene file into a Scene (objects, lights, camera, sky)"]
+    C["render.c: cast rays per pixel and shade them into an RGB8 buffer"]
+    D["image.c: encode the buffer as PNG (via stb) or PPM"]
+    E["scene.c + geometry.c: nearest-hit intersection test per ray"]
+    A --> B --> C --> D
+    C -. per ray .-> E
 ```
 
 For each pixel the renderer builds one or more primary rays from the camera
