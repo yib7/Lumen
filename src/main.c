@@ -12,7 +12,7 @@
 #include <omp.h>
 #endif
 
-#define LUMEN_VERSION "2.0.0"
+#define LUMEN_VERSION "2.0.1"
 
 /* Wall-clock seconds. OpenMP's timer measures elapsed real time on every
  * platform; clock() measures per-process CPU time, which sums every thread and

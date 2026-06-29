@@ -4,6 +4,16 @@ All notable changes to Lumen are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-06-29
+
+Documentation-only release. No code or rendering behavior changed.
+
+### Changed
+- The architecture pipeline diagram in `docs/ARCHITECTURE.md` now renders as a
+  mermaid flowchart on GitHub instead of ASCII art.
+- The three sample-render thumbnails in the README carry descriptive alt text
+  instead of one-word labels.
+
 ## [2.0.0] - 2026-06-27
 
 The rewrite of the original Raytraced Sphere prototype into Lumen: a full
@@ -35,4 +45,5 @@ Lumen name.
 V1.0 and V1.1 (early 2025) were the original Raytraced Sphere versions, a
 simpler raytracer that the 2.0 rewrite supersedes.
 
+[2.0.1]: https://github.com/yib7/Lumen/releases/tag/V2.0.1
 [2.0.0]: https://github.com/yib7/Lumen/releases/tag/V2.0
