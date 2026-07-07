@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <limits.h>
+#include <errno.h>
 
 #include "scene.h"
 #include "parser.h"
@@ -41,12 +43,22 @@ static void print_usage(const char *prog) {
         LUMEN_VERSION, prog);
 }
 
-/* Parses an integer option value, exiting with a message on bad input. */
-static int parse_int_arg(const char *flag, const char *value) {
+/* Parses an integer option value, exiting with a message on bad input.
+ * Rejects non-numeric input and values outside [min_val, INT_MAX] (including
+ * strtol overflow), so a huge dimension can never wrap into a small or
+ * negative buffer size downstream. `min_val` is 1 for dimensions/samples/depth
+ * and 0 for --threads (0 = auto). */
+static int parse_int_arg(const char *flag, const char *value, int min_val) {
     char *end;
+    errno = 0;
     long n = strtol(value, &end, 10);
     if (end == value || *end != '\0') {
         fprintf(stderr, "error: %s expects an integer, got '%s'\n", flag, value);
+        exit(1);
+    }
+    if (errno == ERANGE || n < (long)min_val || n > INT_MAX) {
+        fprintf(stderr, "error: %s must be between %d and %d, got '%s'\n",
+                flag, min_val, INT_MAX, value);
         exit(1);
     }
     return (int)n;
@@ -78,19 +90,19 @@ int main(int argc, char *argv[]) {
             output_path = argv[++i];
         } else if (strcmp(arg, "-w") == 0 || strcmp(arg, "--width") == 0) {
             if (!needs_value) { fprintf(stderr, "error: %s needs a value\n", arg); return 1; }
-            cfg.width = parse_int_arg(arg, argv[++i]);
+            cfg.width = parse_int_arg(arg, argv[++i], 1);
         } else if (strcmp(arg, "-h") == 0 || strcmp(arg, "--height") == 0) {
             if (!needs_value) { fprintf(stderr, "error: %s needs a value\n", arg); return 1; }
-            cfg.height = parse_int_arg(arg, argv[++i]);
+            cfg.height = parse_int_arg(arg, argv[++i], 1);
         } else if (strcmp(arg, "-a") == 0 || strcmp(arg, "--samples") == 0) {
             if (!needs_value) { fprintf(stderr, "error: %s needs a value\n", arg); return 1; }
-            cfg.samples = parse_int_arg(arg, argv[++i]);
+            cfg.samples = parse_int_arg(arg, argv[++i], 1);
         } else if (strcmp(arg, "-d") == 0 || strcmp(arg, "--depth") == 0) {
             if (!needs_value) { fprintf(stderr, "error: %s needs a value\n", arg); return 1; }
-            cfg.max_depth = parse_int_arg(arg, argv[++i]);
+            cfg.max_depth = parse_int_arg(arg, argv[++i], 1);
         } else if (strcmp(arg, "-t") == 0 || strcmp(arg, "--threads") == 0) {
             if (!needs_value) { fprintf(stderr, "error: %s needs a value\n", arg); return 1; }
-            cfg.threads = parse_int_arg(arg, argv[++i]);
+            cfg.threads = parse_int_arg(arg, argv[++i], 0);
         } else {
             fprintf(stderr, "error: unknown option '%s'\n", arg);
             print_usage(argv[0]);
@@ -102,6 +114,21 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "error: width and height must be positive\n");
         return 1;
     }
+
+    /* Cap the total pixel count. parse_int_arg already blocks per-dimension
+     * overflow, and render.c now allocates in size_t so the buffer size can't
+     * wrap; this bound additionally rejects requests that are technically
+     * valid but absurd (e.g. 50000x50000 = 7.5 GB) up front, cleanly, instead
+     * of attempting a multi-gigabyte allocation and a runaway render. */
+    #define MAX_PIXELS ((size_t)100 * 1000 * 1000)   /* 100 MP (~300 MB RGB8) */
+    if ((size_t)cfg.width * (size_t)cfg.height > MAX_PIXELS) {
+        fprintf(stderr,
+                "error: image too large (%dx%d = %zu pixels, max %zu)\n",
+                cfg.width, cfg.height,
+                (size_t)cfg.width * (size_t)cfg.height, (size_t)MAX_PIXELS);
+        return 1;
+    }
+    #undef MAX_PIXELS
 
     Scene scene;
     scene_init(&scene);

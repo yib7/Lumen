@@ -114,7 +114,9 @@ unsigned char *render_scene(const Scene *scene, const RenderConfig *cfg) {
     int h = cfg->height;
     int n = cfg->samples < 1 ? 1 : cfg->samples;
 
-    unsigned char *pixels = malloc((size_t)w * h * 3);
+    /* Cast every operand to size_t so the product is computed in size_t
+     * arithmetic, never in 32-bit int (which would overflow for large w*h). */
+    unsigned char *pixels = malloc((size_t)w * (size_t)h * 3);
     if (!pixels) {
         return NULL;
     }

@@ -25,10 +25,16 @@ static int write_ppm(const char *path, const unsigned char *pixels,
         return 0;
     }
     fprintf(f, "P6\n%d %d\n255\n", width, height);
-    size_t count = (size_t)width * height * 3;
+    size_t count = (size_t)width * (size_t)height * 3;
     size_t written = fwrite(pixels, 1, count, f);
     fclose(f);
-    return written == count;
+    if (written != count) {
+        /* A short write (e.g. disk full) leaves a truncated, corrupt image.
+         * Remove it so callers never mistake a partial file for a valid one. */
+        remove(path);
+        return 0;
+    }
+    return 1;
 }
 
 int image_write(const char *path, const unsigned char *pixels,
