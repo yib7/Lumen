@@ -72,6 +72,6 @@ Lumen name.
 V1.0 and V1.1 (early 2025) were the original Raytraced Sphere versions, a
 simpler raytracer that the 2.0 rewrite supersedes.
 
-[2.0.2]: https://github.com/yib7/Lumen/releases/tag/V2.0.2
-[2.0.1]: https://github.com/yib7/Lumen/releases/tag/V2.0.1
-[2.0.0]: https://github.com/yib7/Lumen/releases/tag/V2.0
+[2.0.2]: https://github.com/yib7/Lumen/releases/tag/v2.0.2
+[2.0.1]: https://github.com/yib7/Lumen/releases/tag/v2.0.1
+[2.0.0]: https://github.com/yib7/Lumen/releases/tag/v2.0.0
