@@ -32,7 +32,10 @@ double vec3_len(Vec3 a) {
 
 Vec3 vec3_normalize(Vec3 a) {
     double len = vec3_len(a);
-    if (len == 0.0) {
+    /* Guard against near-zero (including subnormal) lengths: dividing by them
+     * yields INF, which then propagates to NaN colors. Threshold, don't test
+     * for exact zero. */
+    if (len < 1e-10) {
         return a;
     }
     return vec3_scale(a, 1.0 / len);

@@ -3,6 +3,12 @@
 /lumen.exe
 /lumen_test
 /lumen_test.exe
+/validate_lumen
+/validate_lumen.exe
+/validate_unit
+/validate_unit.exe
+/unit_geometry
+/unit_geometry.exe
 *.o
 *.obj
 
