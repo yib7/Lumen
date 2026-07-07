@@ -116,6 +116,8 @@ int parse_scene_file(const char *path, Scene *scene,
             double v[4];
             if (count != 5) FAIL("line %d: camera needs 4 numbers", line_no);
             if (!read_doubles(tokens, 1, 4, v, line_no, err, err_size)) goto fail;
+            if (v[3] <= 0.0)
+                FAIL("line %d: camera fov must be > 0 (got %g)", line_no, v[3]);
             scene->camera.position = vec3(v[0], v[1], v[2]);
             scene->camera.fov_scale = v[3];
 
@@ -132,6 +134,8 @@ int parse_scene_file(const char *path, Scene *scene,
             if (scene->light_count >= MAX_LIGHTS)
                 FAIL("line %d: too many lights (max %d)", line_no, MAX_LIGHTS);
             if (!read_doubles(tokens, 1, 7, v, line_no, err, err_size)) goto fail;
+            if (v[6] < 0.0)
+                FAIL("line %d: light intensity must be >= 0 (got %g)", line_no, v[6]);
             Light *l = &scene->lights[scene->light_count++];
             l->position = vec3(v[0], v[1], v[2]);
             l->color = vec3(v[3], v[4], v[5]);
@@ -141,6 +145,8 @@ int parse_scene_file(const char *path, Scene *scene,
             double v[7];
             if (count < 8) FAIL("line %d: sphere needs at least 7 numbers", line_no);
             if (!read_doubles(tokens, 1, 7, v, line_no, err, err_size)) goto fail;
+            if (v[3] <= 0.0)
+                FAIL("line %d: sphere radius must be > 0 (got %g)", line_no, v[3]);
             Object *o = new_object();
             if (!o) FAIL("out of memory");
             o->kind = OBJ_SPHERE;
@@ -158,6 +164,8 @@ int parse_scene_file(const char *path, Scene *scene,
             double v[10];
             if (count < 11) FAIL("line %d: plane needs at least 10 numbers", line_no);
             if (!read_doubles(tokens, 1, 10, v, line_no, err, err_size)) goto fail;
+            if (vec3_len(vec3(v[0], v[1], v[2])) < 1e-9)
+                FAIL("line %d: plane normal must be non-zero", line_no);
             Object *o = new_object();
             if (!o) FAIL("out of memory");
             o->kind = OBJ_PLANE;
@@ -176,6 +184,9 @@ int parse_scene_file(const char *path, Scene *scene,
             double v[9];
             if (count < 10) FAIL("line %d: box needs at least 9 numbers", line_no);
             if (!read_doubles(tokens, 1, 9, v, line_no, err, err_size)) goto fail;
+            if (v[0] >= v[3] || v[1] >= v[4] || v[2] >= v[5])
+                FAIL("line %d: box min must be strictly less than max on every axis",
+                     line_no);
             Object *o = new_object();
             if (!o) FAIL("out of memory");
             o->kind = OBJ_BOX;
