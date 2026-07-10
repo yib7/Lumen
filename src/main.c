@@ -51,6 +51,7 @@ static void print_usage(const char *prog) {
         "  -a, --samples N      anti-aliasing grid; N*N rays per pixel (default: 2)\n"
         "  -d, --depth N        reflection bounce limit (default: 4)\n"
         "  -t, --threads N      worker threads, 0 = auto (default: 0)\n"
+        "      --gamma          gamma-encode output (sRGB-ish 1/2.2); default off\n"
         "      --help           show this message\n",
         LUMEN_VERSION, prog);
 }
@@ -86,7 +87,8 @@ int main(int argc, char *argv[]) {
         .height = 600,
         .samples = 2,
         .max_depth = 4,
-        .threads = 0
+        .threads = 0,
+        .gamma = 0
     };
 
     for (int i = 1; i < argc; i++) {
@@ -117,6 +119,8 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(arg, "-t") == 0 || strcmp(arg, "--threads") == 0) {
             if (!needs_value) { fprintf(stderr, "error: %s needs a value\n", arg); return 1; }
             cfg.threads = parse_int_arg(arg, argv[++i], 0, MAX_THREADS);
+        } else if (strcmp(arg, "--gamma") == 0) {
+            cfg.gamma = 1;
         } else {
             fprintf(stderr, "error: unknown option '%s'\n", arg);
             print_usage(argv[0]);

@@ -97,10 +97,13 @@ static Color trace(const Scene *scene, Ray ray, int depth, int max_depth) {
     return local;
 }
 
-/* Clamp a linear color to [0,1] and convert to an 8-bit channel. */
-static unsigned char to_byte(double c) {
+/* Clamp a linear color to [0,1] and convert to an 8-bit channel. When gamma
+ * is set, gamma-encode (pow 1/2.2) after clamping so pow never sees a negative;
+ * with gamma == 0 this is byte-for-byte the old linear computation. */
+static unsigned char to_byte(double c, int gamma) {
     if (c < 0.0) c = 0.0;
     if (c > 1.0) c = 1.0;
+    if (gamma) c = pow(c, 1.0 / 2.2);
     return (unsigned char)(c * 255.0 + 0.5);
 }
 
@@ -153,9 +156,9 @@ unsigned char *render_scene(const Scene *scene, const RenderConfig *cfg) {
 
             Color avg = vec3_scale(sum, inv_samples);
             size_t idx = ((size_t)y * w + x) * 3;
-            pixels[idx + 0] = to_byte(avg.x);
-            pixels[idx + 1] = to_byte(avg.y);
-            pixels[idx + 2] = to_byte(avg.z);
+            pixels[idx + 0] = to_byte(avg.x, cfg->gamma);
+            pixels[idx + 1] = to_byte(avg.y, cfg->gamma);
+            pixels[idx + 2] = to_byte(avg.z, cfg->gamma);
         }
     }
 

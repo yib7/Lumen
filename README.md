@@ -88,6 +88,7 @@ With no arguments it renders `scenes/solar.scene` to `out.png` at 800x600.
 -a, --samples N      anti-aliasing grid; N*N rays per pixel (default: 2)
 -d, --depth N        reflection bounce limit (default: 4)
 -t, --threads N      worker threads, 0 = auto (default: 0)
+    --gamma          gamma-encode output (sRGB-ish, 1/2.2); off by default (bundled scenes are tuned for the linear output)
     --help           show this message
 ```
 

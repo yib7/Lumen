@@ -9,6 +9,7 @@ typedef struct {
     int samples;    /* supersampling: NxN rays per pixel (samples^2 total) */
     int max_depth;  /* reflection recursion limit */
     int threads;    /* worker threads; 0 = use the OpenMP default */
+    int gamma;      /* 1 = gamma-encode output (pow 1/2.2); 0 = raw linear */
 } RenderConfig;
 
 /* Renders the scene into an RGB8 buffer (width*height*3 bytes, row-major,
