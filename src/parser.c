@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "parser.h"
 
 /*
@@ -49,15 +50,20 @@ static int parse_double(const char *tok, double *out) {
     return end != tok && *end == '\0';
 }
 
-#define FAIL(...) do { snprintf(err, err_size, __VA_ARGS__); return 0; } while (0)
+/* helpers: set the message and return failure; the caller closes the file */
+#define SET_ERR(...) do { snprintf(err, err_size, __VA_ARGS__); return 0; } while (0)
+/* main loop: set the message and jump to the fclose(f) cleanup label */
+#define FAIL(...)    do { snprintf(err, err_size, __VA_ARGS__); goto fail; } while (0)
 
 /* Reads `n` doubles starting at tokens[start] into out[]. */
 static int read_doubles(char *tokens[], int start, int n, double *out,
                         int line_no, char *err, int err_size) {
     for (int i = 0; i < n; i++) {
         if (!parse_double(tokens[start + i], &out[i])) {
-            FAIL("line %d: '%s' is not a number", line_no, tokens[start + i]);
+            SET_ERR("line %d: '%s' is not a number", line_no, tokens[start + i]);
         }
+        if (!isfinite(out[i]))
+            SET_ERR("line %d: '%s' is not a finite number", line_no, tokens[start + i]);
     }
     return 1;
 }
@@ -77,12 +83,16 @@ static int apply_reflect(char *tokens[], int count, int expected,
         if (!read_doubles(tokens, expected + 1, 2, vals, line_no, err, err_size)) {
             return 0;
         }
+        if (!(vals[0] >= 0.0 && vals[0] <= 1.0))
+            SET_ERR("line %d: reflectivity must be in 0..1 (got %g)", line_no, vals[0]);
+        if (!(vals[1] > 0.0))
+            SET_ERR("line %d: shininess must be > 0 (got %g)", line_no, vals[1]);
         mat->kind = MAT_REFLECTIVE;
         mat->reflectivity = vals[0];
         mat->shininess = vals[1];
         return 1;
     }
-    FAIL("line %d: unexpected extra tokens (got %d)", line_no, count);
+    SET_ERR("line %d: unexpected extra tokens (got %d)", line_no, count);
 }
 
 static Object *new_object(void) {
@@ -105,7 +115,17 @@ int parse_scene_file(const char *path, Scene *scene,
 
     while (fgets(line, sizeof(line), f)) {
         line_no++;
-        int count = tokenize(line, tokens, MAX_TOKENS);
+        if (!strchr(line, '\n') && !feof(f))
+            FAIL("line %d: line too long (max %d bytes)", line_no, LINE_BUF - 1);
+
+        char *content = line;
+        if (line_no == 1 &&
+            (unsigned char)content[0] == 0xEF &&
+            (unsigned char)content[1] == 0xBB &&
+            (unsigned char)content[2] == 0xBF) {
+            content += 3;
+        }
+        int count = tokenize(content, tokens, MAX_TOKENS);
         if (count == 0) {
             continue;    /* blank or comment line */
         }
