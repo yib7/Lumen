@@ -39,7 +39,7 @@ typedef struct {
 
 typedef struct {
     Vec3   normal;   /* unit normal */
-    double distance; /* signed distance from origin along the normal */
+    double distance; /* distance d places the plane at dot(normal,P) = -d (d units against the normal from the origin) */
 } Plane;
 
 typedef struct {
@@ -96,5 +96,10 @@ void scene_free(Scene *scene);
 /* Returns 1 and fills `hit` with the closest intersection, else 0.
  * `t_min` lets shadow/reflection rays skip the surface they start on. */
 int scene_intersect(const Scene *scene, Ray ray, double t_min, Hit *hit);
+
+/* Returns 1 as soon as ANY object is hit at t in (t_min, t_max), else 0.
+ * Cheaper than scene_intersect for shadow rays: it stops at the first blocker
+ * and keeps no closest-hit / point / normal state. */
+int scene_intersect_any(const Scene *scene, Ray ray, double t_min, double t_max);
 
 #endif /* LUMEN_SCENE_H */

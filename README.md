@@ -140,7 +140,10 @@ plane    nx ny nz  dist   r1 g1 b1  r2 g2 b2 [reflect reflectivity shininess]
 box      minx miny minz  maxx maxy maxz  r g b [reflect reflectivity shininess]
 ```
 
-Planes are drawn as a checkerboard of the two colors. The optional
+Planes are drawn as a checkerboard of the two colors. For a plane, `dist` d
+places the surface where dot(normal, P) = -d — that is, d units from the origin
+*against* the normal direction (so `plane 0 1 0 0.9` puts the floor at y = -0.9).
+The optional
 `reflect reflectivity shininess` suffix on any object switches it to the
 reflective material; `reflectivity` is the 0..1 mirror blend and `shininess`
 is the specular exponent. The parser reports the line number and the problem

@@ -28,12 +28,7 @@ static int in_shadow(const Scene *scene, Vec3 point, const Light *light) {
     Vec3 to_light = vec3_sub(light->position, point);
     double dist = vec3_len(to_light);
     Ray shadow = { point, vec3_scale(to_light, 1.0 / dist) };
-
-    Hit hit;
-    if (scene_intersect(scene, shadow, SHADOW_EPS, &hit)) {
-        return hit.t < dist;   /* blocker must lie before the light */
-    }
-    return 0;
+    return scene_intersect_any(scene, shadow, SHADOW_EPS, dist);
 }
 
 /* Phong-style local shading from all lights at a single hit point. */

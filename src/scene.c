@@ -62,3 +62,14 @@ int scene_intersect(const Scene *scene, Ray ray, double t_min, Hit *hit) {
     }
     return found;
 }
+
+int scene_intersect_any(const Scene *scene, Ray ray, double t_min, double t_max) {
+    for (Object *curr = scene->objects; curr != NULL; curr = curr->next) {
+        double t;
+        Vec3 point, normal;
+        if (object_intersect(curr, ray, t_min, &t, &point, &normal) && t < t_max) {
+            return 1;   /* first blocker before t_max is enough */
+        }
+    }
+    return 0;
+}
