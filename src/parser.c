@@ -7,7 +7,7 @@
 /*
  * Scene file format (one directive per line, '#' starts a comment):
  *
- *   camera  px py pz fov
+ *   camera  px py pz fov  [lx ly lz]   (optional look-at target)
  *   sky     topR topG topB  botR botG botB
  *   light   x y z  r g b  intensity
  *   sphere  cx cy cz radius  r g b           [reflect reflectivity shininess]
@@ -133,13 +133,23 @@ int parse_scene_file(const char *path, Scene *scene,
         const char *kw = tokens[0];
 
         if (strcmp(kw, "camera") == 0) {
-            double v[4];
-            if (count != 5) FAIL("line %d: camera needs 4 numbers", line_no);
-            if (!read_doubles(tokens, 1, 4, v, line_no, err, err_size)) goto fail;
+            if (count != 5 && count != 8)
+                FAIL("line %d: camera needs 4 numbers (px py pz fov) or 7 (+ look-at lx ly lz)", line_no);
+            double v[7];
+            if (!read_doubles(tokens, 1, count - 1, v, line_no, err, err_size)) goto fail;
             if (v[3] <= 0.0)
                 FAIL("line %d: camera fov must be > 0 (got %g)", line_no, v[3]);
             scene->camera.position = vec3(v[0], v[1], v[2]);
             scene->camera.fov_scale = v[3];
+            if (count == 8) {
+                Vec3 target = vec3(v[4], v[5], v[6]);
+                if (vec3_len(vec3_sub(target, scene->camera.position)) < 1e-9)
+                    FAIL("line %d: camera look-at target must differ from position", line_no);
+                scene->camera.target = target;
+                scene->camera.has_look = 1;
+            } else {
+                scene->camera.has_look = 0;
+            }
 
         } else if (strcmp(kw, "sky") == 0) {
             double v[6];

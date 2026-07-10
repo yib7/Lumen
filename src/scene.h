@@ -68,6 +68,8 @@ typedef struct {
 typedef struct {
     Vec3   position;
     double fov_scale;   /* half-height of the image plane at z = 1 */
+    Vec3   target;      /* look-at point (used only when has_look) */
+    int    has_look;    /* 1 = aim at target; 0 = legacy look down +z, +y up */
 } Camera;
 
 #define MAX_LIGHTS 8

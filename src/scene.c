@@ -9,6 +9,8 @@ void scene_init(Scene *scene) {
     scene->sky_bottom = vec3(0.85, 0.90, 1.0);
     scene->camera.position = vec3(0, 0, 0);
     scene->camera.fov_scale = 0.5;
+    scene->camera.target = vec3(0, 0, 0);
+    scene->camera.has_look = 0;
 }
 
 /* Prepend to keep insertion O(1); draw order does not matter for a raytracer. */

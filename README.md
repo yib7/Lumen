@@ -133,13 +133,18 @@ down +z, +y is up, +x is right.
 
 ```
 # directive  parameters
-camera   px py pz  fov
+camera   px py pz  fov  [lx ly lz]
 sky      topR topG topB   botR botG botB
 light    x y z   r g b   intensity
 sphere   cx cy cz  radius   r g b            [reflect reflectivity shininess]
 plane    nx ny nz  dist   r1 g1 b1  r2 g2 b2 [reflect reflectivity shininess]
 box      minx miny minz  maxx maxy maxz  r g b [reflect reflectivity shininess]
 ```
+
+The camera's optional `lx ly lz` aim the camera at that world-space point
+(`scenes/lookat.scene` shows this). When they are omitted the camera keeps the
+default orientation — looking down +z with +y up — so every scene written before
+this option is fully backward compatible and renders identically.
 
 Planes are drawn as a checkerboard of the two colors. For a plane, `dist` d
 places the surface where dot(normal, P) = -d — that is, d units from the origin

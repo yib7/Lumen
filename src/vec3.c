@@ -46,6 +46,13 @@ Vec3 vec3_reflect(Vec3 incident, Vec3 normal) {
     return vec3_sub(incident, vec3_scale(normal, 2.0 * vec3_dot(incident, normal)));
 }
 
+/* Right-handed cross product; used to build the camera's orthonormal basis. */
+Vec3 vec3_cross(Vec3 a, Vec3 b) {
+    return vec3(a.y * b.z - a.z * b.y,
+                a.z * b.x - a.x * b.z,
+                a.x * b.y - a.y * b.x);
+}
+
 Vec3 vec3_lerp(Vec3 a, Vec3 b, double t) {
     return vec3_add(vec3_scale(a, 1.0 - t), vec3_scale(b, t));
 }

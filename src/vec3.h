@@ -22,6 +22,7 @@ double vec3_dot(Vec3 a, Vec3 b);
 double vec3_len(Vec3 a);
 Vec3   vec3_normalize(Vec3 a);
 Vec3   vec3_reflect(Vec3 incident, Vec3 normal);
+Vec3   vec3_cross(Vec3 a, Vec3 b);
 Vec3   vec3_lerp(Vec3 a, Vec3 b, double t);
 
 #endif /* LUMEN_VEC3_H */

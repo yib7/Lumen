@@ -125,6 +125,27 @@ unsigned char *render_scene(const Scene *scene, const RenderConfig *cfg) {
     double start_y = scene->camera.fov_scale;
     double inv_samples = 1.0 / (double)(n * n);
 
+    /* Build one orthonormal camera basis (forward/right/up) up front. For the
+     * legacy path this is exactly +z/+x/+y, so the ray direction below reduces
+     * to vec3(px, py, 1) byte-for-byte; scenes without a look-at are unchanged. */
+    Vec3 forward, right, up;
+    if (scene->camera.has_look) {
+        Vec3 world_up = vec3(0.0, 1.0, 0.0);
+        forward = vec3_normalize(vec3_sub(scene->camera.target, scene->camera.position));
+        right = vec3_cross(world_up, forward);
+        if (vec3_len(right) < 1e-9) {          /* looking straight up/down: pick another ref */
+            world_up = vec3(0.0, 0.0, 1.0);
+            right = vec3_cross(world_up, forward);
+        }
+        right = vec3_normalize(right);
+        up = vec3_cross(forward, right);
+    } else {
+        /* legacy: look down +z, +y up, +x right (identical to vec3(px,py,1)) */
+        forward = vec3(0.0, 0.0, 1.0);
+        right   = vec3(1.0, 0.0, 0.0);
+        up      = vec3(0.0, 1.0, 0.0);
+    }
+
 #ifdef _OPENMP
     if (cfg->threads > 0) {
         omp_set_num_threads(cfg->threads);
@@ -149,7 +170,9 @@ unsigned char *render_scene(const Scene *scene, const RenderConfig *cfg) {
 
                     Ray ray;
                     ray.origin = scene->camera.position;
-                    ray.dir = vec3_normalize(vec3(px, py, 1.0));
+                    Vec3 dir = vec3_add(vec3_add(vec3_scale(right, px),
+                                                 vec3_scale(up, py)), forward);
+                    ray.dir = vec3_normalize(dir);
                     sum = vec3_add(sum, trace(scene, ray, 0, cfg->max_depth));
                 }
             }
