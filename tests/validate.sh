@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# Regression tests for the 2026-07 security/robustness audit fixes:
+# Regression tests for the 2026-07 security/robustness audit fixes (Audit 3 + 5):
 #   - command-line dimension bounds (integer-overflow guard)
-#   - degenerate scene rejection with line-numbered errors
-#   - box exit-normal correctness (unit checks)
-#   - a NaN/negative-shading sweep over a rendered PPM (mirrors scene)
+#   - command-line value caps (--samples/--depth/--threads upper bounds)
+#   - degenerate scene rejection with line-numbered errors, including non-finite
+#     (nan/inf) numbers, out-of-range reflect suffixes, over-long lines, and the
+#     max-lights limit
+#   - sphere/plane/box intersection unit checks
+#   - an exact-size sweep over a rendered PPM (mirrors scene)
 # Exits non-zero on any failure.
 set -uo pipefail
 
@@ -45,6 +48,25 @@ if ./"$BIN" --scene scenes/solar.scene --width 8 --height 6 --samples 1 \
      --threads 0 --output "$TMP/t0.png" >/dev/null 2>&1; then
   pass "--threads 0 (auto) accepted"; else bad "--threads 0 rejected"; fi
 
+echo "== command-line value caps (samples/depth/threads) =="
+# Absurd-but-parseable values must be rejected up front, not fed to n*n / deep
+# recursion / thousands of real threads.
+for cap in "--samples 100000" "--depth 100000" "--threads 9999999"; do
+  if ! ./"$BIN" $cap --scene scenes/solar.scene --width 8 --height 6 \
+       --output "$TMP/o.png" >/dev/null 2>&1; then
+    pass "over-cap rejected: $cap"
+  else
+    bad "over-cap accepted: $cap"
+  fi
+done
+# The documented ceilings themselves must still be accepted.
+if ./"$BIN" --scene scenes/solar.scene --width 8 --height 6 \
+     --samples 256 --depth 64 --threads 1024 --output "$TMP/o.png" >/dev/null 2>&1; then
+  pass "boundary samples=256 depth=64 threads=1024 accepted"
+else
+  bad "boundary samples/depth/threads rejected"
+fi
+
 echo "== degenerate scene rejection (line-numbered) =="
 reject_scene() { # name, content, expected-substring
   printf '%b' "$2" > "$TMP/$1.scene"
@@ -60,6 +82,21 @@ reject_scene bad_box    'camera 0 0 0 0.5\nbox 1 1 1 0 0 0 1 0 0\n'        'box 
 reject_scene bad_plane  'camera 0 0 0 0.5\nplane 0 0 0 1 1 1 1 0 0 0\n'    'plane normal must'
 reject_scene bad_fov    'camera 0 0 0 0\nsphere 0 0 5 1 1 0 0\n'           'fov must'
 reject_scene bad_light  'camera 0 0 0 0.5\nlight 0 0 0 1 1 1 -2\nsphere 0 0 5 1 1 0 0\n' 'intensity must'
+# Non-finite numbers (nan/inf) must be rejected, not silently pass every range
+# check by comparing false against everything.
+reject_scene bad_nan    'camera 0 0 0 0.5\nsphere 0 0 5 nan 1 0 0\n'       'finite'
+reject_scene bad_inf    'camera 0 0 0 inf\nsphere 0 0 5 1 1 0 0\n'         'finite'
+# reflect suffix out of range.
+reject_scene bad_refl   'camera 0 0 0 0.5\nsphere 0 0 5 1 1 0 0 reflect 5 60\n'  'reflectivity must'
+reject_scene bad_shine  'camera 0 0 0 0.5\nsphere 0 0 5 1 1 0 0 reflect 0.5 0\n' 'shininess must'
+# A line longer than the 511-byte buffer must be rejected, not split in two.
+long_pad=$(printf '#%.0s' $(seq 1 600))
+reject_scene bad_long   "camera 0 0 0 0.5\nsphere 0 0 5 1 1 0 0 ${long_pad}\n" 'too long'
+# More than MAX_LIGHTS (8) lights must be rejected on the 9th.
+nine_lights='camera 0 0 0 0.5\n'
+for _ in $(seq 1 9); do nine_lights="${nine_lights}light 0 5 0 1 1 1 1\n"; done
+nine_lights="${nine_lights}sphere 0 0 5 1 1 0 0\n"
+reject_scene bad_lights "$nine_lights" 'too many lights'
 
 echo "== reflective-box scene renders fully (exit-normal regression) =="
 # mirrors.scene exercises boxes whose reflected rays start inside and exit;
@@ -68,11 +105,13 @@ echo "== reflective-box scene renders fully (exit-normal regression) =="
 if ./"$BIN" --scene scenes/mirrors.scene --output "$TMP/mirrors.ppm" \
      --width 120 --height 90 --samples 1 >/dev/null 2>&1; then
   bytes=$(wc -c < "$TMP/mirrors.ppm")
-  # header "P6\n120 90\n255\n" + 120*90*3 = 32400 pixel bytes.
-  if [ "$bytes" -ge 32400 ]; then
+  # header "P6\n120 90\n255\n" (14 bytes) + 120*90*3 (32400) = 32414 bytes exactly.
+  # An exact check catches a file truncated by up to the 14-byte header, which a
+  # >= 32400 check would have passed.
+  if [ "$bytes" -eq 32414 ]; then
     pass "mirrors.ppm rendered fully ($bytes bytes)"
   else
-    bad "mirrors.ppm truncated ($bytes bytes)"
+    bad "mirrors.ppm wrong size ($bytes bytes, expected 32414)"
   fi
 else
   bad "mirrors.scene render failed"

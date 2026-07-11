@@ -16,3 +16,5 @@ jobs:
         run: gcc -O2 -fopenmp -std=c11 -Wall -Wextra -Werror -Isrc src/*.c -lm -o lumen
       - name: Smoke test
         run: bash tests/smoke.sh
+      - name: Validation suite
+        run: bash tests/validate.sh

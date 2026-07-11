@@ -74,6 +74,65 @@ int main(void) {
         check(fabs(len - 1.0) < 1e-9, "exit normal is unit length");
     }
 
+    /* --- Sphere intersection (unit sphere at the origin) --- */
+    Sphere s = { {0, 0, 0}, 1.0 };
+
+    /* 5. Tangent ray grazes the sphere at exactly one point (disc == 0): it hits
+     *    the tangent point with an outward normal there. */
+    {
+        Ray r = { {0, 1, -5}, {0, 0, 1} };
+        int hit = intersect_sphere(&s, r, 1e-4, &t, &point, &normal);
+        check(hit, "tangent ray hits the sphere");
+        check(fabs(t - 5.0) < 1e-9, "tangent hit distance is 5");
+        check(fabs(normal.y - 1.0) < 1e-9 && fabs(normal.x) < 1e-9 &&
+              fabs(normal.z) < 1e-9, "tangent normal points +y (outward)");
+    }
+
+    /* 6. Ray starting at the center exits through the far side; the nearer root
+     *    is behind t_min, so the exit point (t = +radius) is used. */
+    {
+        Ray r = { {0, 0, 0}, {0, 0, 1} };
+        int hit = intersect_sphere(&s, r, 1e-4, &t, &point, &normal);
+        check(hit, "inside ray hits sphere (exit point)");
+        check(fabs(t - 1.0) < 1e-9, "inside-sphere exit distance is the radius");
+        check(fabs(normal.z - 1.0) < 1e-9, "inside-sphere exit normal points +z");
+    }
+
+    /* 7. A sphere entirely behind the ray origin must not be hit. */
+    {
+        Ray r = { {0, 0, 5}, {0, 0, 1} };
+        int hit = intersect_sphere(&s, r, 1e-4, &t, &point, &normal);
+        check(!hit, "sphere behind the ray is a miss");
+    }
+
+    /* --- Plane intersection (y = 0 plane: normal +y, distance 0) --- */
+    Plane pl = { {0, 1, 0}, 0.0 };
+
+    /* 8. A ray parallel to the plane never intersects it. */
+    {
+        Ray r = { {0, 5, 0}, {1, 0, 0} };
+        int hit = intersect_plane(&pl, r, 1e-4, &t, &point, &normal);
+        check(!hit, "ray parallel to plane is a miss");
+    }
+
+    /* 9. A plane behind the ray (ray travelling away from it) must not be hit. */
+    {
+        Ray r = { {0, 5, 0}, {0, 1, 0} };
+        int hit = intersect_plane(&pl, r, 1e-4, &t, &point, &normal);
+        check(!hit, "plane behind the ray is a miss");
+    }
+
+    /* 10. A ray descending onto the plane hits it, and the normal is turned to
+     *     face back toward the ray. */
+    {
+        Ray r = { {0, 5, 0}, {0, -1, 0} };
+        int hit = intersect_plane(&pl, r, 1e-4, &t, &point, &normal);
+        check(hit, "ray descending onto plane hits it");
+        check(fabs(t - 5.0) < 1e-9, "plane hit distance is 5");
+        check(fabs(normal.y - 1.0) < 1e-9, "plane normal faces back toward the ray (+y)");
+        check(vec3_dot(normal, r.dir) < 0.0, "plane normal opposes the ray direction");
+    }
+
     if (failures == 0) {
         printf("ALL UNIT CHECKS PASSED\n");
         return 0;
