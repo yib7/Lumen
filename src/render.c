@@ -1,3 +1,8 @@
+#if !defined(_WIN32)
+#  define _POSIX_C_SOURCE 200809L   /* expose isatty()/fileno() under -std=c11 on glibc */
+#endif
+
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include "render.h"
@@ -7,7 +12,24 @@
 #include <omp.h>
 #endif
 
+/* Platform header for isatty()/fileno() (underscore-prefixed on Windows). */
+#ifdef _WIN32
+#  include <io.h>
+#else
+#  include <unistd.h>
+#endif
+
 #define SHADOW_EPS 1e-4
+
+/* 1 when stderr is an interactive terminal. Progress is only emitted then, so
+ * redirected/piped stderr (files, CI logs) stays free of carriage-return spam. */
+static int stderr_is_tty(void) {
+#ifdef _WIN32
+    return _isatty(_fileno(stderr));
+#else
+    return isatty(fileno(stderr));
+#endif
+}
 
 /* Resolve the surface color at a hit, accounting for plane checkerboards. */
 static Color surface_albedo(const Object *obj, Vec3 point) {
@@ -152,6 +174,15 @@ unsigned char *render_scene(const Scene *scene, const RenderConfig *cfg) {
     }
 #endif
 
+    /* Live progress for long renders: an atomic completed-row counter drives a
+     * "\rrow d/d" line on STDERR only. show_progress gates it to a TTY, and
+     * prog_step yields ~100 updates regardless of height. STDERR-only, so the
+     * pixel buffer / stdout are untouched and image output is byte-identical. */
+    int done_rows = 0;
+    int show_progress = stderr_is_tty();
+    int prog_step = h / 100;
+    if (prog_step < 1) prog_step = 1;
+
     /* Rows are independent, which makes the outer loop trivially parallel. */
 #ifdef _OPENMP
     #pragma omp parallel for schedule(dynamic, 4)
@@ -183,6 +214,32 @@ unsigned char *render_scene(const Scene *scene, const RenderConfig *cfg) {
             pixels[idx + 1] = to_byte(avg.y, cfg->gamma);
             pixels[idx + 2] = to_byte(avg.z, cfg->gamma);
         }
+
+        /* Row finished: atomically bump the shared counter and capture the new
+         * value into a private local, then emit a milestone (~every prog_step
+         * rows, plus the final row). The critical section only stops two
+         * concurrent milestone prints from interleaving (~100 entries total). */
+        int my_row;
+#ifdef _OPENMP
+        #pragma omp atomic capture
+        my_row = ++done_rows;
+#else
+        my_row = ++done_rows;
+#endif
+        if (show_progress && (my_row % prog_step == 0 || my_row == h)) {
+#ifdef _OPENMP
+            #pragma omp critical(progress)
+#endif
+            {
+                fprintf(stderr, "\rrow %d/%d", my_row, h);
+                fflush(stderr);
+            }
+        }
+    }
+
+    /* Terminate the progress line so later stderr output starts on a fresh row. */
+    if (show_progress) {
+        fprintf(stderr, "\n");
     }
 
     return pixels;
