@@ -4,6 +4,47 @@ All notable changes to Lumen are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] - 2026-07-11
+
+Robustness fixes from a second code audit, plus three backward-compatible,
+opt-in features. Default rendering output is unchanged: every existing scene
+renders byte-for-byte identically.
+
+### Added
+- `--gamma` flag to gamma-encode the output (sRGB-ish, 1/2.2). Off by default,
+  since the bundled scenes are tuned for linear output.
+- Optional camera look-at: `camera px py pz fov [lx ly lz]` aims the camera at a
+  world-space point. Omitting the target keeps the default +z view, so older
+  scenes are unaffected. `scenes/lookat.scene` demonstrates it.
+- A live `row N/total` progress line on stderr for long renders, shown only when
+  the terminal is interactive.
+- The regression suite (`tests/validate.sh`) now runs in CI, with new coverage
+  for non-finite input, reflect-suffix ranges, over-long lines, the light limit,
+  command-line caps, and sphere/plane intersection.
+
+### Fixed
+- PNG output (the default format) no longer reports success after a short or
+  failed write. Both PNG and PPM now encode through one integrity-checked writer
+  that removes a truncated file and returns failure.
+- Non-finite scene numbers (`nan`, `inf`) are rejected instead of passing every
+  range check and reaching undefined behavior in the color conversion.
+- The scene parser closes the scene file on every error path; error returns no
+  longer leak the file handle.
+
+### Changed
+- `--samples`, `--depth`, and `--threads` are capped (256, 64, 1024) so absurd
+  values can no longer cause integer-overflow, stack exhaustion, or a request
+  for thousands of threads. The megapixel guard is now computed in a form that
+  cannot itself overflow.
+- The `reflect` suffix is range-checked (reflectivity 0..1, shininess > 0), and
+  scene lines longer than 511 bytes are rejected instead of silently split.
+- A leading UTF-8 byte-order mark in a scene file is skipped, so a file saved by
+  Windows Notepad no longer fails with a misleading error.
+- Shadow rays use an any-hit query that stops at the first blocker, cutting work
+  on the most numerous ray type with no change to the rendered image.
+- Corrected the plane-distance description in the scene format docs to match the
+  implementation.
+
 ## [2.0.2] - 2026-07-07
 
 Security and robustness release. No public API, CLI, or rendering-behavior
@@ -72,6 +113,7 @@ Lumen name.
 V1.0 and V1.1 (early 2025) were the original Raytraced Sphere versions, a
 simpler raytracer that the 2.0 rewrite supersedes.
 
+[2.0.3]: https://github.com/yib7/Lumen/releases/tag/v2.0.3
 [2.0.2]: https://github.com/yib7/Lumen/releases/tag/v2.0.2
 [2.0.1]: https://github.com/yib7/Lumen/releases/tag/v2.0.1
 [2.0.0]: https://github.com/yib7/Lumen/releases/tag/v2.0.0
