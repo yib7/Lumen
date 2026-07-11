@@ -36,10 +36,15 @@ that face each other.
 
 ## Coordinate system and camera
 
-A left-handed system: the camera looks down +z, +y is up, +x is right. The
-image plane sits at z = 1. `Camera.fov_scale` is the half-height of that plane,
-so a larger value widens the field of view. The horizontal extent is scaled by
-the image aspect ratio so pixels stay square at any resolution.
+A left-handed system: by default the camera looks down +z, +y is up, +x is
+right. The image plane sits at z = 1. `Camera.fov_scale` is the half-height of
+that plane, so a larger value widens the field of view. The horizontal extent is
+scaled by the image aspect ratio so pixels stay square at any resolution.
+
+A scene can instead give the camera a look-at target. When it does, `render_scene`
+builds an orthonormal basis (forward, right, up) from the camera position and
+target once per render and forms rays in that basis; with no target the basis is
+exactly +x/+y/+z, so the default path is unchanged.
 
 ## Modules
 
@@ -88,6 +93,10 @@ chunks would leave some threads idle. The whole renderer is read-only on the
   `scene_intersect`.
 - An epsilon (`1e-4`) is added to the start distance of shadow and reflection
   rays so a surface does not shadow or reflect itself from rounding error.
+- Shadow rays use an any-hit query (`scene_intersect_any`) that returns on the
+  first blocker between the point and the light, rather than the full
+  closest-hit scan `trace` uses. Shadow rays are the most numerous, so stopping
+  early matters.
 
 ## Extending it
 

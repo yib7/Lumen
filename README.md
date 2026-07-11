@@ -106,16 +106,21 @@ with 3x3 anti-aliasing and depth 8 drops from about 3.7s single-threaded to
 about 0.50s across all cores: roughly a 7.4x speedup. It is sub-linear, not
 12x, because the reflective scene makes some rays recurse far deeper than others
 (dynamic scheduling balances that) and the cores share memory bandwidth. Run
-your own with `-t 1` versus `-t 0`.
+your own with `-t 1` versus `-t 0`. On a long render, when the terminal is
+interactive, Lumen prints a live `row N/total` line to stderr so a big frame is
+not a silent wait; piped or redirected runs stay quiet.
 
 ## Tests
 
 `tests/smoke.sh` builds the renderer and renders every bundled scene at a small
-size, checking each output is a valid PNG. It runs on every push through GitHub
-Actions (see the badge above).
+size, checking each output is a valid PNG. `tests/validate.sh` builds a unit test
+of the intersection math and checks the parser rejects bad input (out-of-range
+values, non-finite numbers, over-long lines) and that the CLI caps absurd values.
+Both run on every push through GitHub Actions (see the badge above).
 
 ```sh
 bash tests/smoke.sh
+bash tests/validate.sh
 ```
 
 ## Viewing the output
@@ -142,12 +147,12 @@ box      minx miny minz  maxx maxy maxz  r g b [reflect reflectivity shininess]
 ```
 
 The camera's optional `lx ly lz` aim the camera at that world-space point
-(`scenes/lookat.scene` shows this). When they are omitted the camera keeps the
-default orientation — looking down +z with +y up — so every scene written before
+(`scenes/lookat.scene` shows this). When they are omitted the camera keeps its
+default orientation, looking down +z with +y up, so every scene written before
 this option is fully backward compatible and renders identically.
 
 Planes are drawn as a checkerboard of the two colors. For a plane, `dist` d
-places the surface where dot(normal, P) = -d — that is, d units from the origin
+places the surface where dot(normal, P) = -d, that is, d units from the origin
 *against* the normal direction (so `plane 0 1 0 0.9` puts the floor at y = -0.9).
 The optional
 `reflect reflectivity shininess` suffix on any object switches it to the
