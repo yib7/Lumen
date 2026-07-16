@@ -4,6 +4,28 @@ All notable changes to Lumen are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.4] - 2026-07-16
+
+Robustness and documentation fixes from a release audit. Rendering output is
+unchanged; every existing scene renders byte-for-byte identically.
+
+### Fixed
+- Plane checkerboard parity is computed in floating point rather than through a
+  `double`-to-`long` cast, which was undefined when a plane is hit billions of
+  units from the origin (a near-grazing ray, or a hostile scene) on platforms
+  where `long` is 32 bits. Normal scenes are byte-for-byte unchanged.
+
+### Added
+- Regression tests for the two 2.0.3 features that lacked them: `--gamma`
+  (encoded output differs from the linear default) and the look-at camera
+  (renders a complete image).
+
+### Changed
+- Documentation accuracy: the platform notes now record that Linux is built and
+  tested in CI on every push (previously listed as untested), the architecture
+  notes cover `--gamma` and the progress line, and the build and run steps are
+  numbered.
+
 ## [2.0.3] - 2026-07-11
 
 Robustness fixes from a second code audit, plus three backward-compatible,
@@ -113,6 +135,7 @@ Lumen name.
 V1.0 and V1.1 (early 2025) were the original Raytraced Sphere versions, a
 simpler raytracer that the 2.0 rewrite supersedes.
 
+[2.0.4]: https://github.com/yib7/Lumen/releases/tag/v2.0.4
 [2.0.3]: https://github.com/yib7/Lumen/releases/tag/v2.0.3
 [2.0.2]: https://github.com/yib7/Lumen/releases/tag/v2.0.2
 [2.0.1]: https://github.com/yib7/Lumen/releases/tag/v2.0.1
