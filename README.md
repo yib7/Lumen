@@ -32,7 +32,7 @@ from a flat rasterizer:
 - A vertical sky gradient as the background.
 - Multithreaded rendering with OpenMP, one image row per work unit.
 
-The three scenes in `scenes/` produced the images in `renders/`.
+Three of the scenes in `scenes/` produced the images below.
 
 | `solar.scene` | `mirrors.scene` | `sunset.scene` |
 |---|---|---|
@@ -46,31 +46,34 @@ dependencies.
 
 ## Platform
 
-Built and tested on Windows 11 with the WinLibs MinGW-w64 toolchain
-(gcc 16.1.0, UCRT runtime). The code is portable C11 and should build on Linux
-or macOS with any gcc or clang that supports OpenMP, but those have not been
-tested here.
+Developed and tested on Windows 11 with the WinLibs MinGW-w64 toolchain
+(gcc 16.1.0, UCRT runtime). Linux is built and tested on every push: GitHub
+Actions compiles it with `-Werror` and runs the full test suite on Ubuntu, and
+the CI badge above is that run. macOS is untested, but the code is portable C11
+and should build with any gcc or clang that supports OpenMP.
 
-## Build
+## Build and run
 
-You need gcc with OpenMP support (MinGW-w64 on Windows, the system gcc/clang
-elsewhere). From the repository root:
+You need gcc with OpenMP support: MinGW-w64 on Windows, the system gcc or clang
+elsewhere.
+
+**Step 1. Build** from the repository root:
 
 ```sh
 gcc -O2 -fopenmp -std=c11 -Isrc src/*.c -lm -o lumen
 ```
 
-Or use one of the helpers, which run the same command:
+Or use a helper that runs the same command:
 
 ```sh
 ./build.sh        # release build
-make              # same, via Make (on WinLibs MinGW the command is mingw32-make)
+make              # same, via Make (on WinLibs MinGW: mingw32-make)
 ```
 
-If your compiler has no OpenMP, drop `-fopenmp`; the renderer falls back to a
-single thread and prints "1 (single-threaded build)" at startup.
+If your compiler has no OpenMP, drop `-fopenmp` and the renderer falls back to a
+single thread, printing "1 (single-threaded build)" at startup.
 
-## Run
+**Step 2. Render** a scene:
 
 ```sh
 ./lumen --scene scenes/solar.scene --output renders/solar.png
@@ -106,9 +109,11 @@ with 3x3 anti-aliasing and depth 8 drops from about 3.7s single-threaded to
 about 0.50s across all cores: roughly a 7.4x speedup. It is sub-linear, not
 12x, because the reflective scene makes some rays recurse far deeper than others
 (dynamic scheduling balances that) and the cores share memory bandwidth. Run
-your own with `-t 1` versus `-t 0`. On a long render, when the terminal is
-interactive, Lumen prints a live `row N/total` line to stderr so a big frame is
-not a silent wait; piped or redirected runs stay quiet.
+your own with `-t 1` versus `-t 0`.
+
+On a long render, when the terminal is interactive, Lumen prints a live
+`row N/total` line to stderr, so a big frame is not a silent wait. Piped or
+redirected runs stay quiet.
 
 ## Tests
 

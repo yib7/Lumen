@@ -34,6 +34,11 @@ The recursion in step 4 is what makes mirrored surfaces show their
 surroundings, and why raising `--depth` changes scenes with reflective objects
 that face each other.
 
+Shading runs in linear light and yields floating-point color; `render.c` then
+quantizes each channel to 8 bits for the buffer. With `--gamma` it first applies
+an sRGB-ish `pow(1/2.2)` encoding. That flag is off by default so the bundled
+scenes keep the linear tuning their attenuation constants were set against.
+
 ## Coordinate system and camera
 
 A left-handed system: by default the camera looks down +z, +y is up, +x is
@@ -82,6 +87,11 @@ because pixels covering reflective objects cost more (they recurse), so static
 chunks would leave some threads idle. The whole renderer is read-only on the
 `Scene` during the render, which is why no locking is needed. Build without
 `-fopenmp` and the same loop runs serially.
+
+An atomic counter tracks completed rows as the threads finish them. When stderr
+is an interactive terminal the master thread prints a live `row N/total` line so
+a long render is not a silent wait; redirected or piped stderr stays quiet, and
+the counter adds no measurable cost.
 
 ## Performance notes
 
