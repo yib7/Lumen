@@ -7,6 +7,8 @@
 #     max-lights limit
 #   - sphere/plane/box intersection unit checks
 #   - an exact-size sweep over a rendered PPM (mirrors scene)
+#   - feature coverage: --gamma changes the encoded output, and the look-at
+#     camera form renders a complete image
 # Exits non-zero on any failure.
 set -uo pipefail
 
@@ -115,6 +117,36 @@ if ./"$BIN" --scene scenes/mirrors.scene --output "$TMP/mirrors.ppm" \
   fi
 else
   bad "mirrors.scene render failed"
+fi
+
+echo "== --gamma changes the output encoding =="
+# --gamma applies pow(1/2.2) before quantizing, so the encoded image must differ
+# from the default linear output. Render the same scene both ways and confirm the
+# bytes differ, so a no-op --gamma flag can't pass silently.
+./"$BIN" --scene scenes/solar.scene --output "$TMP/linear.ppm" \
+     --width 60 --height 45 --samples 1 >/dev/null 2>&1
+./"$BIN" --scene scenes/solar.scene --output "$TMP/gamma.ppm" \
+     --width 60 --height 45 --samples 1 --gamma >/dev/null 2>&1
+if [ -s "$TMP/linear.ppm" ] && [ -s "$TMP/gamma.ppm" ] \
+   && ! cmp -s "$TMP/linear.ppm" "$TMP/gamma.ppm"; then
+  pass "--gamma output differs from linear"
+else
+  bad "--gamma output identical to linear (or a render failed)"
+fi
+
+echo "== camera look-at scene renders fully =="
+# scenes/lookat.scene uses the optional 7-arg 'camera px py pz fov lx ly lz'
+# look-at form; confirm that code path renders a complete, correctly sized image.
+if ./"$BIN" --scene scenes/lookat.scene --output "$TMP/lookat.ppm" \
+     --width 120 --height 90 --samples 1 >/dev/null 2>&1; then
+  bytes=$(wc -c < "$TMP/lookat.ppm")
+  if [ "$bytes" -eq 32414 ]; then
+    pass "lookat.ppm rendered fully ($bytes bytes)"
+  else
+    bad "lookat.ppm wrong size ($bytes bytes, expected 32414)"
+  fi
+else
+  bad "lookat.scene render failed"
 fi
 
 if [ "$fail" -ne 0 ]; then
