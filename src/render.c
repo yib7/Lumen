@@ -35,10 +35,14 @@ static int stderr_is_tty(void) {
 static Color surface_albedo(const Object *obj, Vec3 point) {
     const Material *m = &obj->material;
     if (m->checker) {
-        long cx = (long)floor(point.x);
-        long cy = (long)floor(point.y);
-        long cz = (long)floor(point.z);
-        if (((cx + cy + cz) & 1L) != 0) {
+        /* Checker parity from floor(x)+floor(y)+floor(z), kept in double rather
+         * than cast to long: a plane hit billions of units out (a near-grazing
+         * ray, or a hostile scene) would overflow a 32-bit long, and the
+         * double->long conversion is undefined in that case (C11 6.3.1.4).
+         * fmod is defined for all finite inputs and matches the old parity
+         * exactly for normal coordinates. */
+        double parity = fmod(floor(point.x) + floor(point.y) + floor(point.z), 2.0);
+        if (fabs(parity) > 0.5) {
             return m->albedo2;
         }
     }
