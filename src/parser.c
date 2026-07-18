@@ -113,10 +113,31 @@ int parse_scene_file(const char *path, Scene *scene,
     int line_no = 0;
     int object_count = 0;
 
-    while (fgets(line, sizeof(line), f)) {
+    /*
+     * Read one line at a time by hand instead of fgets(): the newline vs.
+     * "too long" decision must be length-aware and NUL-aware. fgets() stops at
+     * the buffer cap without distinguishing a genuinely over-long line from a
+     * complete LINE_BUF-1 byte final line, and strchr() would treat an embedded
+     * NUL as the string's end and miss the real newline that follows it. We
+     * track occupancy explicitly and reject a NUL (a text scene never contains
+     * one) with an accurate message rather than a bogus "too long".
+     */
+    for (;;) {
+        size_t len = 0;
+        int c = getc(f);
+        if (c == EOF) {
+            break;               /* clean end of file: no more lines */
+        }
         line_no++;
-        if (!strchr(line, '\n') && !feof(f))
-            FAIL("line %d: line too long (max %d bytes)", line_no, LINE_BUF - 1);
+        while (c != EOF && c != '\n') {
+            if (c == '\0')
+                FAIL("line %d: embedded NUL byte (not a text scene file)", line_no);
+            if (len >= sizeof(line) - 1)
+                FAIL("line %d: line too long (max %d bytes)", line_no, LINE_BUF - 1);
+            line[len++] = (char)c;
+            c = getc(f);
+        }
+        line[len] = '\0';        /* terminate for tokenize() and the rest */
 
         char *content = line;
         if (line_no == 1 &&

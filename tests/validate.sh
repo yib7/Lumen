@@ -100,6 +100,46 @@ for _ in $(seq 1 9); do nine_lights="${nine_lights}light 0 5 0 1 1 1 1\n"; done
 nine_lights="${nine_lights}sphere 0 0 5 1 1 0 0\n"
 reject_scene bad_lights "$nine_lights" 'too many lights'
 
+echo "== embedded NUL byte rejected accurately (not 'too long') =="
+# A short, newline-terminated line that contains an embedded 0x00 must be
+# rejected with an accurate message. The old fgets+strchr reader misdiagnosed
+# this as "line too long" -- strchr stops at the NUL and never sees the real
+# newline that follows -- so the reader must instead name the NUL and must NOT
+# say "too long". A text scene file never legitimately contains a NUL, and the
+# tokenizer cannot read past one anyway.
+printf '%b' 'camera 0 0 0 0.5\nsphere 0 0\x005 1 1 0 0\n' > "$TMP/bad_nul.scene"
+out=$(./"$BIN" --scene "$TMP/bad_nul.scene" --output "$TMP/o.png" 2>&1)
+if [ $? -ne 0 ] \
+   && printf '%s' "$out" | grep -qi 'NUL' \
+   && ! printf '%s' "$out" | grep -q 'too long'; then
+  pass "embedded NUL rejected accurately -> $out"
+else
+  bad "embedded NUL not rejected accurately (got: $out)"
+fi
+
+echo "== exactly-511-byte final line without trailing newline is accepted =="
+# A final line of exactly LINE_BUF-1 = 511 bytes with no trailing newline is a
+# complete, legal line. The old reader rejected it as "too long" because fgets
+# filled the 511-byte buffer without reaching a newline and feof() was not yet
+# set on that read. Build such a line: a valid sphere padded with a trailing
+# '#'-comment (tokenize ignores everything from '#' on) to exactly 511 bytes.
+line511="sphere 0 0 5 1 1 0 0 "
+need=$((511 - ${#line511}))
+line511="${line511}$(printf '#%.0s' $(seq 1 "$need"))"
+if [ "${#line511}" -ne 511 ]; then
+  bad "test bug: final line is ${#line511} bytes, expected 511"
+else
+  # No trailing newline: the sphere line is the file's exact-511-byte last line.
+  printf 'camera 0 0 0 0.5\n%s' "$line511" > "$TMP/line511.scene"
+  last_len=$(tail -n 1 "$TMP/line511.scene" | wc -c)   # bytes of the last line
+  if ./"$BIN" --scene "$TMP/line511.scene" --output "$TMP/line511.ppm" \
+       --width 8 --height 6 --samples 1 >/dev/null 2>&1; then
+    pass "511-byte final line accepted (len=${#line511}, tail wc -c=$last_len)"
+  else
+    bad "511-byte final line rejected (len=${#line511}, should be accepted)"
+  fi
+fi
+
 echo "== reflective-box scene renders fully (exit-normal regression) =="
 # mirrors.scene exercises boxes whose reflected rays start inside and exit;
 # the box exit-normal fix is unit-tested above. Here we confirm the whole
