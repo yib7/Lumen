@@ -134,6 +134,28 @@ else
   bad "--gamma output identical to linear (or a render failed)"
 fi
 
+echo "== light coincident with surface renders without NaN =="
+# A light placed exactly on a hit point makes to_light zero-length; naively
+# normalizing it yields (0,0,0)*Inf = NaN, which slips past the diff<=0 guard
+# and casts a NaN double to unsigned char (undefined behavior). With an odd
+# NxN image at --samples 1 the center ray is exactly (0,0,1), so it strikes the
+# sphere apex at (0,0,4) -- exactly the light's position. The fix must render a
+# complete, correctly sized PPM with exit 0.
+printf '%b' 'camera 0 0 0 0.5\nsphere 0 0 5 1 0.8 0.3 0.2\nlight 0 0 4 1 1 1 1\n' \
+  > "$TMP/coincident.scene"
+if ./"$BIN" --scene "$TMP/coincident.scene" --output "$TMP/coincident.ppm" \
+     --width 3 --height 3 --samples 1 >/dev/null 2>&1; then
+  bytes=$(wc -c < "$TMP/coincident.ppm")
+  # header "P6\n3 3\n255\n" (11 bytes) + 3*3*3 (27) = 38 bytes exactly.
+  if [ "$bytes" -eq 38 ]; then
+    pass "coincident-light scene rendered fully ($bytes bytes)"
+  else
+    bad "coincident-light scene wrong size ($bytes bytes, expected 38)"
+  fi
+else
+  bad "coincident-light scene render failed"
+fi
+
 echo "== camera look-at scene renders fully =="
 # scenes/lookat.scene uses the optional 7-arg 'camera px py pz fov lx ly lz'
 # look-at form; confirm that code path renders a complete, correctly sized image.

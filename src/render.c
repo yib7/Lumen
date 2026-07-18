@@ -49,11 +49,12 @@ static Color surface_albedo(const Object *obj, Vec3 point) {
     return m->albedo;
 }
 
-/* 1 if any object blocks the straight path from `point` to `light`. */
-static int in_shadow(const Scene *scene, Vec3 point, const Light *light) {
-    Vec3 to_light = vec3_sub(light->position, point);
-    double dist = vec3_len(to_light);
-    Ray shadow = { point, vec3_scale(to_light, 1.0 / dist) };
+/* 1 if any object blocks the straight path from `point` toward a light, given
+ * the already-normalized direction and distance to that light. Sharing the
+ * caller's precomputed `light_dir`/`dist` avoids a second vec3_sub + sqrt per
+ * light in the hottest loop (was recomputed independently in in_shadow). */
+static int shadowed_toward(const Scene *scene, Vec3 point, Vec3 light_dir, double dist) {
+    Ray shadow = { point, light_dir };
     return scene_intersect_any(scene, shadow, SHADOW_EPS, dist);
 }
 
@@ -69,13 +70,25 @@ static Color shade_local(const Scene *scene, Ray ray, const Hit *hit) {
 
     for (int i = 0; i < scene->light_count; i++) {
         const Light *light = &scene->lights[i];
-        if (in_shadow(scene, hit->point, light)) {
+
+        /* Direction and distance to the light, computed once and reused for
+         * both the shadow test and shading below. */
+        Vec3 to_light = vec3_sub(light->position, hit->point);
+        double dist = vec3_len(to_light);
+
+        /* Light sits on the surface: there is no defined direction toward it,
+         * and dividing by dist would yield (0,0,0)*Inf = NaN, which then slips
+         * past the diff<=0 guard (NaN compares false) and poisons the pixel.
+         * Skip it. Threshold rather than test ==0, matching vec3_normalize. */
+        if (dist < 1e-9) {
             continue;
         }
 
-        Vec3 to_light = vec3_sub(light->position, hit->point);
-        double dist = vec3_len(to_light);
         Vec3 light_dir = vec3_scale(to_light, 1.0 / dist);
+
+        if (shadowed_toward(scene, hit->point, light_dir, dist)) {
+            continue;
+        }
 
         /* Quadratic-ish falloff, kept gentle so scenes stay lit. */
         double atten = light->intensity /
