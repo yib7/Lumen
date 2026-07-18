@@ -18,3 +18,5 @@ jobs:
         run: bash tests/smoke.sh
       - name: Validation suite
         run: bash tests/validate.sh
+      - name: Sanitizer suite
+        run: bash tests/sanitize.sh
