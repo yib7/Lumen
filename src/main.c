@@ -14,7 +14,7 @@
 #include <omp.h>
 #endif
 
-#define LUMEN_VERSION "2.0.4"
+#define LUMEN_VERSION "2.0.5"
 
 /* CLI upper bounds. Without them --samples/--depth/--threads accept up to
  * INT_MAX and blow up downstream:
