@@ -232,6 +232,71 @@ else
   bad "lookat.scene render failed"
 fi
 
+echo "== golden image: solar.scene pixel values are byte-exact (shading guard) =="
+# Every other render check in this file is STRUCTURAL -- smoke.sh checks the PNG
+# magic bytes, and the size checks above verify exact PPM byte counts. NONE of
+# them inspect a pixel's color, so a regression in the shading/attenuation
+# formula, checkerboard parity, reflection blend, or sky gradient would change
+# pixel COLORS without changing the file size or header, and would slip through.
+# This block pins the actual pixel bytes.
+#
+# solar.scene at 40x30 --samples 1 is fully deterministic: single-sample means no
+# sub-pixel averaging spread, OpenMP only parallelizes across independent rows
+# (per-pixel results are identical run-to-run and across thread counts), and PPM
+# is raw RGB -- no PNG/zlib compression variance. The header is a fixed 13 bytes,
+# "P6\n40 30\n255\n", so body pixel (x,y) starts at file offset 13 + (y*40+x)*3.
+#
+# Golden values below were captured from HEAD. On failure, the named-pixel lines
+# say WHICH color regressed; the sha256 confirms the whole image moved.
+GOLD_SHA=7cb7d176ac8897f0a50bf4f72cb0791451cd60680d2a9a371db648a26dc0c737
+gsha() { # sha256 of a file, hash field only; sha256sum with an openssl fallback
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | cut -d' ' -f1
+  else
+    openssl dgst -sha256 "$1" | awk '{print $NF}'
+  fi
+}
+gpx() { # space-joined RGB triple of body pixel (x=$1, y=$2) in the 40-wide PPM $3
+  local off=$((13 + (($2 * 40 + $1) * 3)))
+  dd if="$3" bs=1 skip="$off" count=3 2>/dev/null | od -An -tu1 | tr -s ' ' | sed 's/^ *//;s/ *$//'
+}
+if ./"$BIN" --scene scenes/solar.scene --output "$TMP/gold.ppm" \
+     --width 40 --height 30 --samples 1 >/dev/null 2>&1; then
+  gbytes=$(wc -c < "$TMP/gold.ppm")
+  if [ "$gbytes" -ne 3613 ]; then
+    # header 13 + 40*30*3 (3600) = 3613; wrong size means the render itself broke.
+    bad "golden render wrong size ($gbytes bytes, expected 3613)"
+  else
+    got_sha=$(gsha "$TMP/gold.ppm")
+    if [ "$got_sha" = "$GOLD_SHA" ]; then
+      pass "golden sha256 matches ($got_sha)"
+    else
+      bad "golden sha256 MISMATCH (got $got_sha) -- shading/parity/reflection/sky regressed"
+    fi
+    # Named spot-checks so a failure names the region, not just "hash differs".
+    sky=$(gpx 0 0 "$TMP/gold.ppm")       # top-left: a sky-gradient pixel
+    if [ "$sky" = "104 147 229" ]; then
+      pass "golden sky pixel (0,0) = $sky"
+    else
+      bad "golden sky pixel (0,0) changed (got '$sky', want '104 147 229') -- sky gradient regressed"
+    fi
+    floor=$(gpx 20 29 "$TMP/gold.ppm")   # bottom-center: a reflective checker-floor pixel
+    if [ "$floor" = "37 48 75" ]; then
+      pass "golden floor pixel (20,29) = $floor"
+    else
+      bad "golden floor pixel (20,29) changed (got '$floor', want '37 48 75') -- checker/reflection/attenuation regressed"
+    fi
+    sphere=$(gpx 24 7 "$TMP/gold.ppm")   # the yellow sphere: diffuse + specular shading
+    if [ "$sphere" = "181 150 23" ]; then
+      pass "golden sphere pixel (24,7) = $sphere"
+    else
+      bad "golden sphere pixel (24,7) changed (got '$sphere', want '181 150 23') -- diffuse/specular shading regressed"
+    fi
+  fi
+else
+  bad "golden solar.scene render failed"
+fi
+
 if [ "$fail" -ne 0 ]; then
   echo "VALIDATION TESTS FAILED"; exit 1
 fi
