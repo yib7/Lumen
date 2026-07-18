@@ -69,6 +69,23 @@ else
   bad "boundary samples/depth/threads rejected"
 fi
 
+echo "== bare -h prints usage; -h <N> still sets height =="
+# A bare -h with no following value is a help request (the near-universal -h
+# convention): it must exit 0 and print the usage text, not error.
+out=$(./"$BIN" -h 2>&1)
+if [ $? -eq 0 ] && printf '%s' "$out" | grep -q "Usage:"; then
+  pass "bare -h prints usage and exits 0"
+else
+  bad "bare -h did not print usage / exit 0 (got: $out)"
+fi
+# -h <N> must still set the height: render a tiny image at height 123.
+if ./"$BIN" --scene scenes/solar.scene -w 8 -h 123 --samples 1 \
+     --output "$TMP/h123.ppm" >/dev/null 2>&1 && [ -s "$TMP/h123.ppm" ]; then
+  pass "-h 123 still sets height (render succeeded)"
+else
+  bad "-h 123 failed to set height / render"
+fi
+
 echo "== degenerate scene rejection (line-numbered) =="
 reject_scene() { # name, content, expected-substring
   printf '%b' "$2" > "$TMP/$1.scene"
@@ -99,6 +116,10 @@ nine_lights='camera 0 0 0 0.5\n'
 for _ in $(seq 1 9); do nine_lights="${nine_lights}light 0 5 0 1 1 1 1\n"; done
 nine_lights="${nine_lights}sphere 0 0 5 1 1 0 0\n"
 reject_scene bad_lights "$nine_lights" 'too many lights'
+# A second camera or sky directive must be rejected, not silently overwrite the
+# first.
+reject_scene dup_camera 'camera 0 0 0 0.5\ncamera 0 0 0 0.5\nsphere 0 0 5 1 1 0 0\n' 'camera already defined'
+reject_scene dup_sky    'camera 0 0 0 0.5\nsky 0 0 0 1 1 1\nsky 0 0 0 1 1 1\nsphere 0 0 5 1 1 0 0\n' 'sky already defined'
 
 echo "== embedded NUL byte rejected accurately (not 'too long') =="
 # A short, newline-terminated line that contains an embedded 0x00 must be

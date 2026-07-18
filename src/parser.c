@@ -112,6 +112,8 @@ int parse_scene_file(const char *path, Scene *scene,
     char *tokens[MAX_TOKENS];
     int line_no = 0;
     int object_count = 0;
+    int camera_set = 0;
+    int sky_set = 0;
 
     /*
      * Read one line at a time by hand instead of fgets(): the newline vs.
@@ -154,6 +156,8 @@ int parse_scene_file(const char *path, Scene *scene,
         const char *kw = tokens[0];
 
         if (strcmp(kw, "camera") == 0) {
+            if (camera_set)
+                FAIL("line %d: camera already defined", line_no);
             if (count != 5 && count != 8)
                 FAIL("line %d: camera needs 4 numbers (px py pz fov) or 7 (+ look-at lx ly lz)", line_no);
             double v[7];
@@ -171,13 +175,17 @@ int parse_scene_file(const char *path, Scene *scene,
             } else {
                 scene->camera.has_look = 0;
             }
+            camera_set = 1;
 
         } else if (strcmp(kw, "sky") == 0) {
+            if (sky_set)
+                FAIL("line %d: sky already defined", line_no);
             double v[6];
             if (count != 7) FAIL("line %d: sky needs 6 numbers", line_no);
             if (!read_doubles(tokens, 1, 6, v, line_no, err, err_size)) goto fail;
             scene->sky_top = vec3(v[0], v[1], v[2]);
             scene->sky_bottom = vec3(v[3], v[4], v[5]);
+            sky_set = 1;
 
         } else if (strcmp(kw, "light") == 0) {
             double v[7];

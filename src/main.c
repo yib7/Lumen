@@ -52,7 +52,7 @@ static void print_usage(const char *prog) {
         "  -d, --depth N        reflection bounce limit (default: 4)\n"
         "  -t, --threads N      worker threads, 0 = auto (default: 0)\n"
         "      --gamma          gamma-encode output (sRGB-ish 1/2.2); default off\n"
-        "      --help           show this message\n",
+        "      --help           show this message (a bare -h with no value shows it too)\n",
         LUMEN_VERSION, prog);
 }
 
@@ -108,7 +108,9 @@ int main(int argc, char *argv[]) {
             if (!needs_value) { fprintf(stderr, "error: %s needs a value\n", arg); return 1; }
             cfg.width = parse_int_arg(arg, argv[++i], 1, INT_MAX);
         } else if (strcmp(arg, "-h") == 0 || strcmp(arg, "--height") == 0) {
-            if (!needs_value) { fprintf(stderr, "error: %s needs a value\n", arg); return 1; }
+            /* A bare -h/--height with no following value is treated as a help
+             * request (the near-universal -h convention) rather than an error. */
+            if (!needs_value) { print_usage(argv[0]); return 0; }
             cfg.height = parse_int_arg(arg, argv[++i], 1, INT_MAX);
         } else if (strcmp(arg, "-a") == 0 || strcmp(arg, "--samples") == 0) {
             if (!needs_value) { fprintf(stderr, "error: %s needs a value\n", arg); return 1; }

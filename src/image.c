@@ -32,7 +32,12 @@ static int write_all(const char *path, const unsigned char *bytes, size_t len) {
     size_t written = fwrite(bytes, 1, len, f);
     int close_ok = (fclose(f) == 0);
     if (written != len || !close_ok) {
-        remove(path);
+        /* Best-effort cleanup of the partial file. If remove() itself fails the
+         * write is still a failure, but warn so the leftover truncated file is
+         * not mistaken for a valid image. */
+        if (remove(path) != 0) {
+            fprintf(stderr, "warning: could not remove partial file '%s'\n", path);
+        }
         return 0;
     }
     return 1;

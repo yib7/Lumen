@@ -151,12 +151,16 @@ plane    nx ny nz  dist   r1 g1 b1  r2 g2 b2 [reflect reflectivity shininess]
 box      minx miny minz  maxx maxy maxz  r g b [reflect reflectivity shininess]
 ```
 
-The camera's optional `lx ly lz` aim the camera at that world-space point
+The camera's `fov` is not an angle in degrees or radians: it is the half-height
+of the image plane at distance 1 from the camera, so a larger value widens the
+view. The camera's optional `lx ly lz` aim the camera at that world-space point
 (`scenes/lookat.scene` shows this). When they are omitted the camera keeps its
 default orientation, looking down +z with +y up, so every scene written before
 this option is fully backward compatible and renders identically.
 
-Planes are drawn as a checkerboard of the two colors. For a plane, `dist` d
+Planes are drawn as a checkerboard of the two colors. The checkerboard renders
+as a proper square grid only on axis-aligned planes; a tilted plane gets a
+skewed pattern. For a plane, `dist` d
 places the surface where dot(normal, P) = -d, that is, d units from the origin
 *against* the normal direction (so `plane 0 1 0 0.9` puts the floor at y = -0.9).
 The optional

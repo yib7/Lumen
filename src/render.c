@@ -40,7 +40,9 @@ static Color surface_albedo(const Object *obj, Vec3 point) {
          * ray, or a hostile scene) would overflow a 32-bit long, and the
          * double->long conversion is undefined in that case (C11 6.3.1.4).
          * fmod is defined for all finite inputs and matches the old parity
-         * exactly for normal coordinates. */
+         * exactly for normal coordinates. Because parity is taken from the raw
+         * world coordinates, the checkerboard forms a proper square grid only on
+         * axis-aligned planes; a tilted plane gets a skewed pattern. */
         double parity = fmod(floor(point.x) + floor(point.y) + floor(point.z), 2.0);
         if (fabs(parity) > 0.5) {
             return m->albedo2;
