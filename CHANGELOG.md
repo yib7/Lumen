@@ -35,6 +35,8 @@ identically.
 - Documentation: checkerboards render as a proper square grid only on
   axis-aligned planes, and the camera `fov` is the image-plane half-height at
   distance 1, not an angle.
+- `docs/ARCHITECTURE.md` now documents the test suite and CI (the unit test,
+  `validate.sh`, `smoke.sh`, and the sanitizer harness).
 
 ### Added
 - A sanitizer test suite (`tests/sanitize.sh`) that builds with
