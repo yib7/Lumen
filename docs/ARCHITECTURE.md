@@ -108,6 +108,31 @@ the counter adds no measurable cost.
   closest-hit scan `trace` uses. Shadow rays are the most numerous, so stopping
   early matters.
 
+## Testing and CI
+
+Four entry points cover the code:
+
+- `tests/unit_geometry.c` is a standalone C program that asserts the
+  intersection math directly (for example a box's exit-face normal). It is
+  compiled and run by `validate.sh`.
+- `tests/validate.sh` builds the unit test and drives the binary: it checks the
+  CLI rejects and caps bad arguments, the parser rejects malformed and
+  out-of-range scenes with line-numbered errors, a scene renders to an exact PPM
+  byte size, and a small `solar.scene` render matches a committed golden hash and
+  named pixel values (so a shading, checker, reflection, or sky regression is
+  caught, not just a size change).
+- `tests/smoke.sh` renders every bundled scene at a small size and checks each
+  output is a valid PNG.
+- `tests/sanitize.sh` rebuilds with AddressSanitizer and UndefinedBehaviorSanitizer
+  and runs the parser over the bundled, coincident-light, and malformed scenes,
+  failing on any sanitizer diagnostic. It skips cleanly where the sanitizer
+  runtimes are absent (the WinLibs MinGW toolchain has none), so it runs for real
+  in CI.
+
+`.github/workflows/ci.yml` runs all three shell suites on Ubuntu on every push
+and pull request, compiling with `-Werror`. The CI badge in the README links to
+that run.
+
 ## Extending it
 
 - New primitive: add a kind to `ObjectKind`, a struct to the `Object` union,

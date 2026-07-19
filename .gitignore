@@ -1,6 +1,8 @@
 # build output
 /lumen
 /lumen.exe
+/lumen_asan
+/lumen_asan.exe
 /lumen_test
 /lumen_test.exe
 /validate_lumen
